@@ -23,7 +23,6 @@ Weights download automatically from HuggingFace on first run. Each model ships t
 - **~7× smaller checkpoints.** Gemma 4 E2B fits in 1.4 GB and E4B in 2.6 GB — small enough to download quickly and stay within mobile per-app memory budgets.
 - **Accuracy preserved where it counts.** Quality is held on the three things that matter most for edge assistants — instruction following (IFEval), tool calls (τ²-Bench), and general world knowledge (MMLU-Pro).
 - **Gemma 4 Edge architecture.** Hybrid attention interleaving local sliding-window and global layers, Per-Layer Embeddings (PLE), tied LM-head / token embeddings for memory-efficient long context, and Proportional RoPE on the global KV-shared layers.
-- **Multimodal.** Text generation, image understanding, and audio transcription, with native Gemma 4 function calling / tool use.
 - **MLX-ready artifacts.** Decoder weights use a flat, MLX-compatible per-group quantization format; PLE tables use a compact AQLM-style vector-quantization codec (4.7 GB → ~0.26 GB), decompressed on the fly with a single batched gather.
 
 ### How the compression works
