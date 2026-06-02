@@ -1,0 +1,127 @@
+# edge-lm
+
+![Gemma E2B compression flow: 9.26 GB BF16 compressed to 1.44 GB — 6.4× smaller](https://cdn.thestage.ai/production/cms_file_upload/1780406294-645b80f9-cebe-4ef2-bc04-f524afb4f244/Tokens%20per%20Second%20CuDNN%20%282%29.png)
+
+**Tiny LLMs optimized for edge deployment.**
+
+`edge-lm` runs compressed large language models on-device — Apple Silicon Macs and iPhones — through [MLX](https://github.com/ml-explore/mlx). The first release ships a series of compressed **Gemma 4** checkpoints that are roughly **7× smaller** than the original while preserving the capabilities that matter most for on-device assistants: general world knowledge, instruction following, and tool use.
+
+
+> 📝 Read the full write-up: *7× size reduction for Gemma 4 Edge models — Compressing PLE architectures.*
+
+## Models
+
+| Model | Size | Compression | Modalities |
+|---|---|---|---|
+| [`TheStageAI/gemma-4-E2B-it`](https://huggingface.co/TheStageAI/gemma-4-E2B-it) | **1.4 GB** | up to 6.7× | text · vision · audio |
+| [`TheStageAI/gemma-4-E4B-it`](https://huggingface.co/TheStageAI/gemma-4-E4B-it) | **2.6 GB** | up to 5.6× | text · vision · audio |
+
+Weights download automatically from HuggingFace on first run. Each model ships two operating points — `l` (more quality, larger artifact) and `m` (the smaller headline compression target, default).
+
+## Key features
+
+- **~7× smaller checkpoints.** Gemma 4 E2B fits in 1.4 GB and E4B in 2.6 GB — small enough to download quickly and stay within mobile per-app memory budgets.
+- **Accuracy preserved where it counts.** Quality is held on the three things that matter most for edge assistants — instruction following (IFEval), tool calls (τ²-Bench), and general world knowledge (MMLU-Pro).
+- **Gemma 4 Edge architecture.** Hybrid attention interleaving local sliding-window and global layers, Per-Layer Embeddings (PLE), tied LM-head / token embeddings for memory-efficient long context, and Proportional RoPE on the global KV-shared layers.
+- **Multimodal.** Text generation, image understanding, and audio transcription, with native Gemma 4 function calling / tool use.
+- **MLX-ready artifacts.** Decoder weights use a flat, MLX-compatible per-group quantization format; PLE tables use a compact AQLM-style vector-quantization codec (4.7 GB → ~0.26 GB), decompressed on the fly with a single batched gather.
+
+### How the compression works
+
+- **Transformer blocks** are quantized with GPTQ + Quantization Error Propagation (QEP) and range clipping into MLX-compatible plain per-group weight-only tensors.
+- **PLE tables** are compressed with an AQLM-style codec: each `(token, layer)` row is split into 8-dim groups, each `(layer, group)` learns a 128-entry codebook, with sensitivity-weighted (Fisher-style) assignments.
+- **Token embeddings / LM head** use a flat per-group scalar scheme matched to the same runtime contract.
+- **Bit-width schedule** is chosen per module by Riemannian Constrained Optimization (RCO) under an exact byte budget; the release checkpoint is then re-quantized from the dense model in one consistent GPTQ/QEP pass.
+
+## Quick start
+
+```bash
+git clone https://github.com/TheStageAI/edge-lm.git
+cd edge-lm
+
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt        # or: pip install -e .
+```
+
+Run text generation (downloads `TheStageAI/gemma-4-E2B-it` on first run):
+
+```bash
+python examples/generation_test.py --prompts "What is 2+2?" "Explain gravity in one sentence"
+```
+
+Use it from Python:
+
+```python
+from edge_lm import load
+from mlx_vlm import stream_generate
+
+model, tokenizer = load()  # TheStageAI/gemma-4-E2B-it, size "m" by default
+# model, tokenizer = load("TheStageAI/gemma-4-E4B-it", size="l")  # larger, higher quality
+
+prompt = tokenizer.apply_chat_template(
+    [{"role": "user", "content": "Write a haiku about the moon."}],
+    tokenize=False, add_generation_prompt=True,
+)
+for chunk in stream_generate(model, tokenizer, prompt, max_tokens=128):
+    print(chunk.text, end="", flush=True)
+```
+
+More examples:
+
+```bash
+python examples/test_vision.py --image photo.jpg --prompt "Describe this image"
+python examples/test_audio.py  --audio recording.wav --prompt "Transcribe this speech"
+python examples/chat.py --tools                      # interactive chat with tool use
+```
+
+## Benchmarks
+
+### Quality
+
+Every model — ours and the GGUF baselines alike — is dequantized to a standard BF16 checkpoint and served through vLLM, so the backend is equalized across the table. We report **MMLU-Pro** (general knowledge), **IFEval** (instruction following), and **τ²-Bench / Tau2** (multi-step tool use). For Tau2 the Gemma checkpoint under test acts as the agent while a fixed `Qwen3-235B-A22B-2507` simulates the user.
+
+`Ours L` keeps more quality at a larger artifact size; `Ours M` is the smaller headline compression target.
+
+**Gemma 4 E2B**
+
+| Model | Compression | MMLU-Pro | IFEval | Tau2 (avg of 3) |
+|---|---|---|---|---|
+| BF16 | 1.00× | 61.85 | 74.68 | 30.67 |
+| **Ours L** | 5.62× | **54.48** | **74.86** | 22.20 |
+| **Ours M** | **6.70×** | 49.85 | 71.53 | **23.45** |
+| Unsloth Q3-K-S | 3.81× | 48.20 | 64.51 | 18.69 |
+| Unsloth UD-Q2-K-XL | 3.87× | 43.17 | 66.54 | 20.23 |
+
+**Gemma 4 E4B**
+
+| Model | Compression | MMLU-Pro | IFEval | Tau2 |
+|---|---|---|---|---|
+| BF16 | 1.00× | 70.49 | 81.33 | 37.19 |
+| **Ours L** | 4.64× | 67.41 | 81.52 | **33.25** |
+| **Ours M** | **5.60×** | 63.54 | **80.78** | 29.04 |
+| Unsloth Q3-K-S | 3.90× | **63.66** | 77.08 | 30.47 |
+| Unsloth UD-Q2-K-XL | 4.01× | 58.69 | 79.67 | 22.91 |
+
+Bold marks the best result among the compressed checkpoints in each column. Tau2 computed with `Qwen3-235B-A22B-2507` as the user simulator.
+
+Reproduce the quality benchmarks:
+
+```bash
+pip install "edge-lm[eval]"   # adds lm-evaluation-harness
+python benchmarks/evaluate.py --tasks ifeval --apply-chat-template --max-tokens 2048
+python benchmarks/evaluate.py --tasks mmlu_pro --apply-chat-template
+```
+
+### Performance
+
+On-device runtime numbers — time-to-first-token (TTFT), decode throughput, and peak memory on Apple Silicon — *coming soon.* These will compare the MLX-compatible release checkpoints against Unsloth GGUF/llama.cpp and a uniform MLX W4 baseline once the final device measurements are locked.
+
+```bash
+python benchmarks/performance.py --input-tokens 1024 --output-tokens 1024
+```
+
+## License
+
+Released under the [MIT License](LICENSE), © 2026 thestage.ai labs.
+
+The compressed model weights are derivatives of Google's Gemma 4 and are additionally subject to the [Gemma Terms of Use](https://ai.google.dev/gemma/terms).

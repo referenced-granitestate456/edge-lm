@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "edge-lm"
+version = "0.1.0"
+description = "Tiny LLMs on Apple Silicon via MLX"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "thestage.ai labs" }]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+]
+keywords = ["mlx", "llm", "apple-silicon", "quantization", "gemma", "on-device"]
+dependencies = [
+    "mlx>=0.31.0",
+    "mlx-vlm>=0.5.0",
+    "safetensors>=0.7.0",
+    "transformers>=5.0.0",
+    "numpy",
+    "huggingface_hub",
+]
+
+[project.optional-dependencies]
+# Quality benchmarks (benchmarks/evaluate.py)
+eval = ["lm-eval>=0.4.12"]
+# Voice input for examples/chat.py --voice
+voice = ["sounddevice>=0.5.0"]
+
+[project.urls]
+Homepage = "https://github.com/TheStageAI/edge-lm"
+
+[tool.setuptools.packages.find]
+include = ["edge_lm*"]

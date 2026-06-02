@@ -216,3 +216,18 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- edge-lm project-specific ---
+# Model weights / large artifacts — never commit
+*.gguf
+*.safetensors
+# Audio samples
+*.wav
+*.mp3
+# Caches & results
+.hf_cache/
+eval_results/
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
