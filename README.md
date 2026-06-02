@@ -114,10 +114,20 @@ python benchmarks/evaluate.py --tasks mmlu_pro --apply-chat-template
 
 ### Performance
 
-On-device runtime numbers — time-to-first-token (TTFT), decode throughput, and peak memory on Apple Silicon — *coming soon.* These will compare the MLX-compatible release checkpoints against Unsloth GGUF/llama.cpp and a uniform MLX W4 baseline once the final device measurements are locked.
+Measured on an **Apple M3 Max (69 GB)**, size `m` checkpoints, 1024 input / 1024 output tokens,
+chunked prefill (256-token chunks), best of 5 runs. `TTFT` = prefill + first token;
+`TPS` = steady-state decode throughput; `MLX peak memory` = `mx.get_peak_memory()` (MLX Metal allocator).
+
+| Model | TTFT | Decode (TPS) | MLX peak memory |
+|---|---|---|---|
+| Gemma 4 E2B | 441 ms | **112.8** | 2.1 GB |
+| Gemma 4 E4B | 848 ms | **73.4** | 3.5 GB |
+
+Reproduce:
 
 ```bash
-python benchmarks/performance.py --input-tokens 1024 --output-tokens 1024
+python benchmarks/performance.py --model TheStageAI/gemma-4-E2B-it \
+    --input-tokens 1024 --output-tokens 1024 --prefill-step-size 256
 ```
 
 ## License

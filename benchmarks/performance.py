@@ -11,7 +11,6 @@ Usage:
 """
 
 import argparse
-import resource
 import timeit
 
 import mlx.core as mx
@@ -71,23 +70,14 @@ def generate_n_tokens(model, input_ids, n_tokens: int, prefill_step_size=None):
 
 
 def measure_peak_memory(model, input_ids, output_tokens, prefill_step_size=None):
-    """Run one full generation; return (MLX peak GPU bytes, process peak RSS bytes).
+    """Run one full generation; return MLX peak GPU bytes.
 
-    MLX peak  = mx.get_peak_memory(): bytes from MLX's own Metal allocator only
-                (weights + activations + KV that MLX tracks), reset per call.
-    Proc RSS  = resource.getrusage(RUSAGE_SELF).ru_maxrss: whole-process high-water
-                resident set (macOS reports bytes). This is the same kind of number
-                /usr/bin/time -l gives for the llama.cpp benchmark, so it is the
-                apples-to-apples column across backends. NOTE: ru_maxrss only grows
-                and cannot be reset, so it is per-model-accurate only when one model
-                is loaded per process (the default run). With --compare-ref /
-                --compare-ref-4bit, later models report the cumulative process peak.
+    MLX peak = mx.get_peak_memory(): bytes from MLX's own Metal allocator only
+               (weights + activations + KV that MLX tracks), reset per call.
     """
     mx.reset_peak_memory()
     generate_n_tokens(model, input_ids, output_tokens, prefill_step_size)
-    peak_gpu = mx.get_peak_memory()
-    peak_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    return peak_gpu, peak_rss
+    return mx.get_peak_memory()
 
 
 def bench_model(model, input_ids, output_tokens, repeat, warmup, label="",
@@ -120,12 +110,11 @@ def bench_model(model, input_ids, output_tokens, repeat, warmup, label="",
     full = min(full_runs)
 
     print("  Measuring peak memory...")
-    peak_mem, peak_rss = measure_peak_memory(model, input_ids, output_tokens, prefill_step_size)
+    peak_mem = measure_peak_memory(model, input_ids, output_tokens, prefill_step_size)
 
     tps = (output_tokens - 1) / (full - ttft)
 
-    return {"ttft": ttft, "full": full, "tps": tps,
-            "peak_mem": peak_mem, "peak_rss": peak_rss}
+    return {"ttft": ttft, "full": full, "tps": tps, "peak_mem": peak_mem}
 
 
 def load_ref_model(hf_model: str, quantize_4bit: bool = False,
@@ -146,22 +135,18 @@ def load_ref_model(hf_model: str, quantize_4bit: bool = False,
 
 
 def print_results(results: list[dict]):
-    width = 95
+    width = 82
     print(f"\n{'=' * width}")
     header = (f"{'Model':<30s} {'TTFT (ms)':>10s} {'Full (ms)':>10s} "
-              f"{'TPS':>10s} {'MLX mem':>12s} {'Proc RSS':>12s}")
+              f"{'TPS':>10s} {'MLX mem':>12s}")
     print(header)
     print("-" * width)
     for r in results:
         mem_str = f"{r['peak_mem'] / 1e6:.0f} MB"
-        rss_str = f"{r['peak_rss'] / 1e6:.0f} MB"
         print(f"{r['label']:<30s} {r['ttft']*1000:>10.1f} {r['full']*1000:>10.1f} "
-              f"{r['tps']:>10.1f} {mem_str:>12s} {rss_str:>12s}")
+              f"{r['tps']:>10.1f} {mem_str:>12s}")
     print(f"{'=' * width}")
-    print("MLX mem  = mx.get_peak_memory() (MLX Metal allocator only).")
-    print("Proc RSS = process peak resident set (resource.getrusage); same metric as")
-    print("           the llama.cpp benchmark's /usr/bin/time -l, so cross-backend")
-    print("           comparable. With --compare-ref* it is cumulative (see code).")
+    print("MLX mem = mx.get_peak_memory() (MLX Metal allocator only).")
 
 
 def main():
@@ -183,7 +168,7 @@ def main():
                              "(lowers prefill peak memory; <=0 disables chunking)")
     parser.add_argument("--cache-limit-mb", type=int, default=None,
                         help="Cap MLX's freed-buffer cache pool (MB). Lower = "
-                             "return memory to OS sooner (affects Proc RSS).")
+                             "return freed buffers to the OS sooner.")
     args = parser.parse_args()
 
     if args.cache_limit_mb is not None:
