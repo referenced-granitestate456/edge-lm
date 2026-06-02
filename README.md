@@ -25,13 +25,6 @@ Weights download automatically from HuggingFace on first run. Each model ships t
 - **Gemma 4 Edge architecture.** Hybrid attention interleaving local sliding-window and global layers, Per-Layer Embeddings (PLE), tied LM-head / token embeddings for memory-efficient long context, and Proportional RoPE on the global KV-shared layers.
 - **MLX-ready artifacts.** Decoder weights use a flat, MLX-compatible per-group quantization format; PLE tables use a compact AQLM-style vector-quantization codec (4.7 GB → ~0.26 GB), decompressed on the fly with a single batched gather.
 
-### How the compression works
-
-- **Transformer blocks** are quantized with GPTQ + Quantization Error Propagation (QEP) and range clipping into MLX-compatible plain per-group weight-only tensors.
-- **PLE tables** are compressed with an AQLM-style codec: each `(token, layer)` row is split into 8-dim groups, each `(layer, group)` learns a 128-entry codebook, with sensitivity-weighted (Fisher-style) assignments.
-- **Token embeddings / LM head** use a flat per-group scalar scheme matched to the same runtime contract.
-- **Bit-width schedule** is chosen per module by Riemannian Constrained Optimization (RCO) under an exact byte budget; the release checkpoint is then re-quantized from the dense model in one consistent GPTQ/QEP pass.
-
 ## Quick start
 
 ```bash
