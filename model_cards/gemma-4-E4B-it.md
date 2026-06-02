@@ -66,7 +66,8 @@ It also includes optional 4-bit vision and audio towers for image understanding 
 ## Usage
 
 ```bash
-pip install edge-lm   # or: git clone https://github.com/TheStageAI/edge-lm && pip install -e edge-lm
+git clone https://github.com/TheStageAI/edge-lm.git
+pip install -e edge-lm
 ```
 
 ```python
